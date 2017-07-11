@@ -1,0 +1,128 @@
+Initialize engine version: 5.4.1f1 (649f48bbbf0f)
+GfxDevice: creating device client; threaded=1
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.0]
+    Renderer: AMD Radeon R9 M275 (ID=0x6820)
+    Vendor:   ATI
+    VRAM:     2026 MB
+Begin MonoManager ReloadAssembly
+Platform assembly: C:\Users\Chase\Documents\GeodesicWorlds\GeodesicWorlds_Data\Managed\UnityEngine.dll (this message is harmless)
+Loading C:\Users\Chase\Documents\GeodesicWorlds\GeodesicWorlds_Data\Managed\UnityEngine.dll into Unity Child Domain
+Platform assembly: C:\Users\Chase\Documents\GeodesicWorlds\GeodesicWorlds_Data\Managed\Assembly-CSharp-firstpass.dll (this message is harmless)
+Loading C:\Users\Chase\Documents\GeodesicWorlds\GeodesicWorlds_Data\Managed\Assembly-CSharp-firstpass.dll into Unity Child Domain
+Platform assembly: C:\Users\Chase\Documents\GeodesicWorlds\GeodesicWorlds_Data\Managed\Assembly-CSharp.dll (this message is harmless)
+Loading C:\Users\Chase\Documents\GeodesicWorlds\GeodesicWorlds_Data\Managed\Assembly-CSharp.dll into Unity Child Domain
+Platform assembly: C:\Users\Chase\Documents\GeodesicWorlds\GeodesicWorlds_Data\Managed\UnityEngine.UI.dll (this message is harmless)
+Loading C:\Users\Chase\Documents\GeodesicWorlds\GeodesicWorlds_Data\Managed\UnityEngine.UI.dll into Unity Child Domain
+Platform assembly: C:\Users\Chase\Documents\GeodesicWorlds\GeodesicWorlds_Data\Managed\UnityEngine.Networking.dll (this message is harmless)
+Loading C:\Users\Chase\Documents\GeodesicWorlds\GeodesicWorlds_Data\Managed\UnityEngine.Networking.dll into Unity Child Domain
+- Completed reload, in  0.284 seconds
+Platform assembly: C:\Users\Chase\Documents\GeodesicWorlds\GeodesicWorlds_Data\Managed\System.Core.dll (this message is harmless)
+Platform assembly: C:\Users\Chase\Documents\GeodesicWorlds\GeodesicWorlds_Data\Managed\System.dll (this message is harmless)
+desktop: 1920x1080 60Hz; virtual: 1920x1080 at 0,0
+<RI> Initializing input.
+<RI> Input initialized.
+<RI> Initialized touch support.
+UnloadTime: 1.242336 ms
+Remove
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Remove
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Remove
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 0, 1, 8
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 0, 8, 4
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 0, 4, 5
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 0, 5, 11
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 0, 11, 1
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 1, 11, 6
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 1, 6, 7
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 1, 7, 8
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 2, 3, 9
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 2, 9, 7
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 2, 7, 6
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 2, 6, 10
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 2, 10, 3
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 3, 10, 5
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 3, 5, 4
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 3, 4, 9
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 4, 8, 9
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 5, 10, 11
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 6, 11, 10
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Place Face: 7, 9, 8
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+282
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+300
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 42)
+
+Setting up 1 worker threads for Enlighten.
+  Thread -> id: 1ac30 -> priority: 1 
