@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 public static class GeodesicGenerator {
 
-	private static int _faceLengthX = 1, _faceLengthY = 1; // number of vertices to traverse between "corners" of the sphere
+	private static int _faceLengthX = 1, _faceLengthY = 1; // number of vertices to traverse between "corners" of the geodesic
 	private static float _radius = 0; // radius of the geodesic (calculated in InitializeIcosahedron)
 	private static Vertex _vertexPrefab; // instantiate new Vertices with this prefab
 	private static List<Vertex> _geodesicCorners; // the vertices that define the underlying geodesic shape.
@@ -33,7 +33,7 @@ public static class GeodesicGenerator {
 	}
 
 	// Generates a connected vertex mesh of a geodesic sphere based on a regular icosahedron
-	public static void GenerateGeodesic(int x, int y, Vertex prefab) {
+	public static List<Vertex> GenerateGeodesic(int x, int y, Vertex prefab) {
 		SetDimensions(x, y);
 		InitializePrefab(prefab);
 		InitializeIcosahedron();
@@ -41,15 +41,20 @@ public static class GeodesicGenerator {
 
 		List<Vertex> vertices, edges;
 		PlaceFaces(out vertices, out edges);
+
+		DestroyVertices(_templateVertices);
 		ConnectFaces(ref edges);
 		//List<float> weightIndex = RadiusWeightedSmoothingIndex(vertices);
 
 		RoundGeodesic(ref vertices);
 
 		Debug.Log(Vector3.Distance(vertices[0].transform.position, vertices[0].neighbors[0].transform.position));
-		NeighborDistanceSmoothing(ref vertices, 100);
+		NeighborDistanceSmoothing(ref vertices, (_faceLengthX + _faceLengthY) * 2);
 		// destroy all leftover objects when finished (those in the static lists, they will not be kept)
 		DestroyVertices(_geodesicCorners);
+
+		ClearLists();
+		return vertices;
 	}
 
 	private static void InitializePrefab(Vertex prefab) {
@@ -480,10 +485,6 @@ public static class GeodesicGenerator {
 				}
 			}
 		}
-
-		// Destroy template now that all the faces are set
-		DestroyVertices(_templateVertices);
-
 		connected.AddRange(uniqueCorners);
 	}
 
@@ -651,7 +652,7 @@ public static class GeodesicGenerator {
 
 	// Smoothes vertex locations weighted by the average distance to each vertices' neighbors' neighbor
 	private static void NeighborDistanceSmoothing(ref List<Vertex> vertices, int numPasses) {
-		for (int n = 0; n < 100; n++) { // n < (A + B) * 2 recommended number of passes
+		for (int n = 0; n < numPasses; n++) { // n < (A + B) * 2 recommended number of passes
 			// adjust all simultaneously
 			List<Vector3> newPositions = new List<Vector3>();
 			newPositions.Clear();
@@ -690,5 +691,45 @@ public static class GeodesicGenerator {
 		for (int i = vertices.Count - 1; i >= 0; i--) {
 			GameObject.DestroyImmediate(vertices[i].gameObject);
 		}
+	}
+
+	// returns true if point lies along a line segment
+	private static bool PointOnSegment(Vector3 point, Vector3 start, Vector3 end) {
+		//print(distanceToSegment(point, start, end));
+		float d = DistanceToSegmentSquared(point, start, end);
+		//print(d);
+		return d <= _edgeErrorValue * _edgeErrorValue;
+		/*if (point == start || point == end)
+			return true;
+		Vector3 lineA = start - point;
+		Vector3 lineB = start - end;
+		// error range of arctan(0.5/l)
+		float l = lineB.magnitude;
+		float angleError = Mathf.Rad2Deg * Mathf.Atan2(edgeErrorValue, l);
+		if (lineA.magnitude <= lineB.magnitude && Mathf.Abs(Vector3.Angle(lineA, lineB)) < angleError) // on the line
+			return true;
+		else
+			return false;*/
+	}
+
+	// returns the shortest distance from a point to a line segment
+	private static float DistanceToSegmentSquared(Vector2 point, Vector2 start, Vector2 end) {
+		float dot = (point.x - start.x) * (end.x - start.x) + (point.y - start.y) * (end.y - start.y);
+		//float dot = Vector2.Dot(point - start, end - start);
+		dot /= (end - start).sqrMagnitude; // normalized
+		if (dot < 0) // point exists some distance before the start of the line
+			return (point - start).sqrMagnitude;
+		else if (dot <= 1) {
+			return (point - start).sqrMagnitude - dot * dot * (end - start).sqrMagnitude;
+		}
+		else // point exists some distance after the end of the line
+			return (point - end).sqrMagnitude;
+	}
+
+	private static void ClearLists() {
+		_geodesicCorners.Clear();
+		_templateVertices.Clear();
+		_templateEdges.Clear();
+		_templateCorners.Clear();
 	}
 }
