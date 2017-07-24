@@ -2,18 +2,19 @@
 using System.Collections;
 using System.Collections.Generic;
 
-// class for generating Class I, II, & III geodesic spheres as a collection of Vertex objects
+// static class for generating Class I, II, & III geodesic spheres as a collection of Vertex objects
 
 public static class GeodesicGenerator {
 
 	private static int _faceLengthX = 1, _faceLengthY = 1; // number of vertices to traverse between "corners" of the sphere
+	private static float _radius = 0; // radius of the geodesic (calculated in InitializeIcosahedron)
 	private static Vertex _vertexPrefab; // instantiate new Vertices with this prefab
 	private static List<Vertex> _geodesicCorners; // the vertices that define the underlying geodesic shape.
 	private static List<Vertex> _templateVertices, _templateEdges, _templateCorners; // temp face
 	private static float _edgeErrorValue = .001f; // used for finding duplicates
 
 	public static void SetDimensions(int x, int y) {
-		if (x < 1 && y < 1) // div by 0 if both are 0
+		if (x < 1 && y < 1) // causes div by 0 if both are 0
 			y = 1;
 		_faceLengthX = Mathf.Max(x, 0);
 		_faceLengthY = Mathf.Max(y, 0);
@@ -27,14 +28,28 @@ public static class GeodesicGenerator {
 		return _faceLengthY;
 	}
 
+	public static float GetRadius() {
+		return _radius;
+	}
+
 	// Generates a connected vertex mesh of a geodesic sphere based on a regular icosahedron
 	public static void GenerateGeodesic(int x, int y, Vertex prefab) {
 		SetDimensions(x, y);
 		InitializePrefab(prefab);
 		InitializeIcosahedron();
-		InitializeFaceVertices();
-		
+		InitializeFaceTemplate();
+
+		List<Vertex> vertices, edges;
+		PlaceFaces(out vertices, out edges);
+		ConnectFaces(ref edges);
+		//List<float> weightIndex = RadiusWeightedSmoothingIndex(vertices);
+
+		RoundGeodesic(ref vertices);
+
+		Debug.Log(Vector3.Distance(vertices[0].transform.position, vertices[0].neighbors[0].transform.position));
+		NeighborDistanceSmoothing(ref vertices, 100);
 		// destroy all leftover objects when finished (those in the static lists, they will not be kept)
+		DestroyVertices(_geodesicCorners);
 	}
 
 	private static void InitializePrefab(Vertex prefab) {
@@ -89,10 +104,11 @@ public static class GeodesicGenerator {
 		foreach (Vertex vert in _geodesicCorners) {
 			vert.transform.position *= length / 2; // 2 is the initial side length
 		}
+		_radius = _geodesicCorners[0].transform.position.magnitude;
 	}
 
 	// Create the template the faces of the geodesic will be created from
-	private static void InitializeFaceVertices() {
+	private static void InitializeFaceTemplate() {
 		_templateVertices = new List<Vertex>();
 		_templateEdges = new List<Vertex>();
 		_templateCorners = new List<Vertex>();
@@ -244,7 +260,7 @@ public static class GeodesicGenerator {
 		corners = copyCorners;
 	}
 
-	// Given an assembled face of the geodesic, place it
+	// Given an assembled face of the geodesic, move it
 	private static void MoveFace(List<Vertex> faceVerts, List<Vector3> faceCornerLocations, List<Vector3> worldCornerLocations) {
 		// normVec = crossproduct(a-b,a-c) where abc are defined clockwise(following LHR such that normal points outward)
 		// upVec = b - mid(a, c)
@@ -282,7 +298,10 @@ public static class GeodesicGenerator {
 		Object.Destroy(temp);
 	}
 
-	private static void PlaceFaces() {
+	// Uses template face to place all vertices and removes duplicates, also returns the list of fully connected edges and corners (these should have all their correct neighbors)
+	private static void PlaceFaces(out List<Vertex> vertices, out List<Vertex> connected) {
+		vertices = new List<Vertex>(); // list of vertices
+		connected = new List<Vertex>(); // list of edges and corners after removing duplicates that have all of their neighbors
 		List<Vector3> cornerVectors = new List<Vector3>();
 		// first 3 vertices are the corners
 		cornerVectors.Add(_templateCorners[0].transform.position);
@@ -291,7 +310,6 @@ public static class GeodesicGenerator {
 
 		List<Vertex> uniqueEdges = new List<Vertex>();
 		List<Vertex> uniqueCorners = new List<Vertex>();
-		List<Vertex> connectedEdges = new List<Vertex>(); // list of most recent completely connected edges (used for mending the seams)
 		
 		// Copy and place each face and remove all resulting duplicates
 		for (int i = 0; i < _geodesicCorners.Count; i++) {
@@ -390,7 +408,7 @@ public static class GeodesicGenerator {
 								combined = true;
 								toDestroy.Add(n);
 								uniqueEdges.Remove(c);
-								connectedEdges.Add(c);
+								connected.Add(c);
 								break;
 							}
 						}
@@ -458,13 +476,219 @@ public static class GeodesicGenerator {
 						newFace.Remove(toDestroy[k]);
 						Object.DestroyImmediate(toDestroy[k].gameObject);
 					}
-					worldTiles.AddRange(newFace);
+					vertices.AddRange(newFace);
 				}
 			}
 		}
+
+		// Destroy template now that all the faces are set
+		DestroyVertices(_templateVertices);
+
+		connected.AddRange(uniqueCorners);
 	}
 
-	private static void AddFaceToWorld() {
+	// After the vertices are correctly positioned on the geodesic, finish connecting the vertices missing neighbors in the correct order
+	private static void ConnectFaces(ref List<Vertex> connected) {
+		// Connect neighbors at seams
+		while (connected.Count > 0) {
+			List<Vertex> newConnected = new List<Vertex>();
+			List<Vertex> toRemove = new List<Vertex>();
+			Debug.Log(connected.Count);
+			foreach (Vertex connect in connected) {
+				for (int i = 0; i < connect.neighbors.Count; i++) {
+					bool completed = true;
+					// if all of connected's neighbors have neighbors, it is 'completed' and no longer needs to be checked
+					if (connect.neighbors[i] != null && connect.neighbors[(i + 1) % connect.neighbors.Count] != null && !connect.neighbors[i].neighbors.Contains(connect.neighbors[(i + 1) % connect.neighbors.Count])) {
+						completed = false;
+						Vertex leftNeighbor = connect.neighbors[i];
+						Vertex rightNeighbor = connect.neighbors[(i + 1) % connect.neighbors.Count];
+						// index of left's missing neighbor
+						int leftIndex = (leftNeighbor.neighbors.IndexOf(connect) + leftNeighbor.neighbors.Count - 1) % leftNeighbor.neighbors.Count;
+						// index of right's missing neighbor
+						int rightIndex = (rightNeighbor.neighbors.IndexOf(connect) + 1) % rightNeighbor.neighbors.Count;
 
+						leftNeighbor.neighbors[leftIndex] = rightNeighbor;
+						rightNeighbor.neighbors[rightIndex] = leftNeighbor;
+
+						// add the connected neighbors to list
+						int numNullLeft = 0;
+						for (int j = 0; j < leftNeighbor.neighbors.Count; j++) {
+							if (leftNeighbor.neighbors[j] == null)
+								numNullLeft++;
+						}
+						int numNullRight = 0;
+						for (int j = 0; j < rightNeighbor.neighbors.Count; j++) {
+							if (rightNeighbor.neighbors[j] == null)
+								numNullRight++;
+						}
+						if (numNullLeft < 2 && numNullLeft <= numNullRight) {
+							newConnected.Add(leftNeighbor);
+						}
+						else if (numNullRight < 2) {
+							newConnected.Add(rightNeighbor);
+						}
+					}
+					if (completed) // this vertex and its neighbors are properly connected
+						toRemove.Add(connect);
+				}
+			}
+
+			foreach (Vertex v in toRemove)
+				connected.Remove(v);
+			connected.AddRange(newConnected);
+		}
+	}
+
+	// Pushes all vertices to the correct distance from the center
+	private static void RoundGeodesic(ref List<Vertex> vertices) {
+		foreach (Vertex v in vertices)
+			v.transform.position *= _radius / v.transform.position.magnitude;
+	}
+
+	// Creates a weight index based on each vertices' initial distance from center (before making the geodesic a sphere) used for smoothing
+	private static List<float> RadiusWeightedSmoothingIndex(List<Vertex> vertices) {
+		List<float> weightIndex = new List<float>();
+		foreach (Vertex v in vertices)
+			weightIndex.Add((_radius / v.transform.position.magnitude) - 0.5f);
+		return weightIndex;
+	}
+
+	// Smoothes vertex locations weighted by the centroid of 3D shell formed with their neighbors' opposite neighbors
+	private static void CentroidSmoothing(ref List<Vertex> vertices, int numPasses) {
+		for (int n = 0; n < numPasses; n++) {
+			// adjust all simultaneously
+			List<Vector3> newPositions = new List<Vector3>();
+			foreach (Vertex v in vertices) {
+				// ignore corners
+				if (v.neighbors.Count < 6) {
+					newPositions.Add(v.transform.position);
+					continue;
+				}
+
+				List<Vector3> hexCorners = new List<Vector3>();
+				List<float> hexWeights = new List<float>();
+				for (int i = 0; i < v.neighbors.Count; i++) {
+					/*if (v.neighbors[i].neighbors.Count < 6) {
+						int index = (v.neighbors[i].neighbors.IndexOf(v) + 2);
+						hexCorners.Add(
+							(v.neighbors[i].neighbors[index % v.neighbors[i].neighbors.Count].transform.position
+							+ v.neighbors[i].neighbors[(index + 1) % v.neighbors[i].neighbors.Count].transform.position)
+							/ 2);
+						//hexWeights.Add(weightIndex[worldTiles.IndexOf(v.neighbors[i])]);
+					}
+					else {
+						int index = (v.neighbors[i].neighbors.IndexOf(v) + 3) % v.neighbors[i].neighbors.Count;
+						hexCorners.Add(v.neighbors[i].neighbors[index].transform.position);
+						//hexWeights.Add(weightIndex[worldTiles.IndexOf(v.neighbors[i].neighbors[index])]);
+					}*/
+					hexCorners.Add(v.neighbors[i].transform.position);
+					foreach (Vertex neighbor in v.neighbors) {
+						float weight = 0;
+						foreach (Vertex neighborSecond in neighbor.neighbors) {
+							float dist = Vector3.Distance(neighbor.transform.position, neighborSecond.transform.position);
+							weight += dist;
+						}
+						weight /= neighbor.neighbors.Count; // avg dist of neighbor's neighbors
+						weight *= weight * weight * weight;
+						hexWeights.Add(weight);
+					}
+				}
+
+				Vector3 numeratorSum = Vector3.zero;
+				float denominatorSum = 0;
+				for (int i = 0; i < hexCorners.Count; i++) {
+					Vector3 a = v.transform.position;
+					Vector3 b = hexCorners[i % hexCorners.Count];
+					Vector3 c = hexCorners[(i + 1) % hexCorners.Count];
+					Vector3 avg = (a + b + c) / 3;
+					float doubleArea = Vector3.Magnitude(Vector3.Cross(b - a, c - a));
+					doubleArea *= (hexWeights[i] + hexWeights[(i + 1) % hexWeights.Count]) / 2; // apply avg weight of vectors
+					numeratorSum += avg * doubleArea;
+					denominatorSum += doubleArea;
+				}
+
+				Vector3 centroid = numeratorSum / denominatorSum;
+				centroid *= _radius / centroid.magnitude; // position on sphere surface
+				newPositions.Add(centroid);
+			}
+			for (int i = 0; i < vertices.Count; i++) {
+				vertices[i].transform.position = newPositions[i];
+			}
+			Debug.Log(Vector3.Distance(vertices[0].transform.position, vertices[0].neighbors[0].transform.position));
+		}
+	}
+
+	// Smoothes vertex locations weighted by each vertices' initial distance from center (before making the geodesic a sphere)
+	private static void RadiusWeightedSmoothing(ref List<Vertex> vertices, List<float> weightIndex, int numPasses) {
+		for (int n = 0; n < numPasses; n++) {
+			// adjust all simultaneously
+			List<Vector3> newPositions = new List<Vector3>();
+			newPositions.Clear();
+			foreach (Vertex v in vertices) {
+				// ignore corners
+				if (v.neighbors.Count < 6) {
+					newPositions.Add(v.transform.position);
+					continue;
+				}
+
+				Vector3 position = Vector3.zero;
+				foreach (Vertex neighbor in v.neighbors) {
+					position += neighbor.transform.position * weightIndex[vertices.IndexOf(neighbor)]; // weight index defined before creating sphere
+				}
+
+				position /= v.neighbors.Count;
+				position *= _radius / position.magnitude;
+				newPositions.Add(position);
+			}
+
+			for (int i = 0; i < vertices.Count; i++) {
+				vertices[i].transform.position = newPositions[i];
+			}
+
+			Debug.Log(Vector3.Distance(vertices[0].transform.position, vertices[0].neighbors[0].transform.position));
+		}
+	}
+
+	// Smoothes vertex locations weighted by the average distance to each vertices' neighbors' neighbor
+	private static void NeighborDistanceSmoothing(ref List<Vertex> vertices, int numPasses) {
+		for (int n = 0; n < 100; n++) { // n < (A + B) * 2 recommended number of passes
+			// adjust all simultaneously
+			List<Vector3> newPositions = new List<Vector3>();
+			newPositions.Clear();
+			foreach (Vertex v in vertices) {
+				// ignore corners
+				if (v.neighbors.Count < 6) {
+					newPositions.Add(v.transform.position);
+					continue;
+				}
+
+				Vector3 position = Vector3.zero;
+				foreach (Vertex neighbor in v.neighbors) {
+					float weight = 0;
+					foreach (Vertex neighborSecond in neighbor.neighbors) {
+						float dist = Vector3.Distance(neighbor.transform.position, neighborSecond.transform.position);
+						weight += dist;
+					}
+					weight /= neighbor.neighbors.Count; // avg dist of neighbor's neighbors
+					weight *= weight * weight;
+					position += neighbor.transform.position * weight;
+				}
+
+				position /= v.neighbors.Count;
+				position *= _radius / position.magnitude;
+				newPositions.Add(position);
+			}
+			for (int i = 0; i < vertices.Count; i++) {
+				vertices[i].transform.position = newPositions[i];
+			}
+			Debug.Log(Vector3.Distance(vertices[0].transform.position, vertices[0].neighbors[0].transform.position));
+		}
+	}
+
+	// Destroys the Vertex objects in the list
+	private static void DestroyVertices(List<Vertex> vertices) {
+		for (int i = vertices.Count - 1; i >= 0; i--) {
+			GameObject.DestroyImmediate(vertices[i].gameObject);
+		}
 	}
 }

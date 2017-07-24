@@ -12,7 +12,8 @@ public class GeodesicWorld : MonoBehaviour {
 	private float _edgeErrorValue = .001f;
 	// Use this for initialization
 	void Start() {
-		GeodesicGenerator.GenerateGeodesic(3, 6, vertPrefab);
+		GeodesicGenerator.GenerateGeodesic(hexA, hexB, vertPrefab);
+		return;
 
 		transform.position = Vector3.zero;
 		transform.eulerAngles = Vector3.zero;
@@ -267,6 +268,7 @@ public class GeodesicWorld : MonoBehaviour {
 			v.transform.position *= radius / v.transform.position.magnitude;
 		}
 
+		// Centroid Smoothing
 		// move vertices to centroid of 3d shell formed with neighbors' opposite neighbors
 		print(Vector3.Distance(worldTiles[0].transform.position, worldTiles[0].neighbors[0].transform.position));
 		for (int n = 0; n < 0; n++) {
@@ -331,6 +333,7 @@ public class GeodesicWorld : MonoBehaviour {
 			print(Vector3.Distance(worldTiles[0].transform.position, worldTiles[0].neighbors[0].transform.position));
 		}
 
+		// Radius Weighted Smoothing
 		// smooth positions for a more centered position between neighbors
 		for (int n = 0; n < 0; n++) {
 			// adjust all simultaneously
@@ -345,20 +348,24 @@ public class GeodesicWorld : MonoBehaviour {
 
 				Vector3 position = Vector3.zero;
 				foreach (Vertex neighbor in v.neighbors) {
-					position += neighbor.transform.position * weightIndex[worldTiles.IndexOf(neighbor)];
+					position += neighbor.transform.position * weightIndex[worldTiles.IndexOf(neighbor)]; // weight index defined before creating sphere
 				}
 
 				position /= v.neighbors.Count;
 				position *= radius / position.magnitude;
 				newPositions.Add(position);
 			}
+
 			for (int i = 0; i < worldTiles.Count; i++) {
 				worldTiles[i].transform.position = newPositions[i];
 			}
+
 			print(Vector3.Distance(worldTiles[0].transform.position, worldTiles[0].neighbors[0].transform.position));
 		}
+
+		// Neighbor Distance Smoothing
 		// smooth positions for a more centered position between neighbors
-		for (int n = 0; n < 100; n++) { // n < (A + B) * 2
+		for (int n = 0; n < 100; n++) { // n < (A + B) * 2 recommended number of passes
 			// adjust all simultaneously
 			List<Vector3> newPositions = new List<Vector3>();
 			newPositions.Clear();
