@@ -54,8 +54,8 @@ public class GlobeCam : MonoBehaviour {
 			else
 				transform.position /= 1.05f;
 		}
-
-		transform.LookAt(globe.transform, transform.up);
+		
+		transform.LookAt(globe.transform, globe.transform.up);
 	}
 
 	//
